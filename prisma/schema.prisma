@@ -1,0 +1,65 @@
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("USER") // "USER" or "ADMIN"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  materials Material[]
+  scores    Score[]
+}
+
+model Material {
+  id        String   @id @default(cuid())
+  title     String
+  subject   String
+  type      String   // "pdf" or "video"
+  url       String
+  content   String?  // For RAG/Notes
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Score {
+  id        String   @id @default(cuid())
+  score     Int
+  total     Int
+  quizId    String?  // Optional identifier for specific quizzes
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Topic {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  questions Question[]
+  createdAt DateTime   @default(now())
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  text          String
+  options       Json     // Array of strings
+  correctIndex  Int
+  explanation   String?
+  
+  topicId       String
+  topic         Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+}
