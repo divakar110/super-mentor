@@ -6,7 +6,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Groq Setup
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Groq Setup (Safe for Build)
+const groqKey = process.env.GROQ_API_KEY || "dummy_key_for_build";
+const groq = new Groq({
+    apiKey: groqKey,
+    dangerouslyAllowBrowser: true // if needed, but usually server side
+});
 
 // Prompt Template
 const SYSTEM_PROMPT = `
