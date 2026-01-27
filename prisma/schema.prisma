@@ -47,6 +47,7 @@ model Topic {
   id        String     @id @default(cuid())
   name      String     @unique
   slug      String     @unique
+  sourceUrl String?    // URL to the original PDF file
   questions Question[]
   createdAt DateTime   @default(now())
 }

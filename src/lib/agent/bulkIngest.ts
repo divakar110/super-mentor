@@ -16,7 +16,7 @@ function chunkText(text: string, chunkSize: number = 30000, overlap: number = 10
     return chunks;
 }
 
-export async function processBulkPdf(text: string, filename: string) {
+export async function processBulkPdf(text: string, filename: string, pdfUrl?: string) {
     try {
         console.log(`Starting bulk processing for ${filename}. Length: ${text.length} chars`);
 
@@ -34,8 +34,14 @@ export async function processBulkPdf(text: string, filename: string) {
         const topicSlug = topicName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
         const topic = await prisma.topic.upsert({
             where: { name: topicName },
-            update: {},
-            create: { name: topicName, slug: topicSlug }
+            update: {
+                sourceUrl: pdfUrl // Update URL if it exists
+            },
+            create: {
+                name: topicName,
+                slug: topicSlug,
+                sourceUrl: pdfUrl
+            }
         });
 
         console.log(`Identified Topic: ${topic.name}`);

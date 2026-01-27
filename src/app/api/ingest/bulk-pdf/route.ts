@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processBulkPdf } from "@/lib/agent/bulkIngest";
+import { uploadFileToGCS } from "@/lib/storage";
 // Polyfill for pdf-parse dependencies (pdfjs-dist based)
 if (typeof DOMMatrix === "undefined") {
     (global as any).DOMMatrix = class DOMMatrix { };
@@ -34,7 +35,23 @@ export async function POST(req: Request) {
         // Note: For very large files, this should ideally be a background job.
         // For this MVP, we await it, but we might hit Vercel timeouts if hosted.
         // On local/VPS it will just take time.
-        const result = await processBulkPdf(text, file.name);
+        let pdfUrl: string | undefined;
+        try {
+            console.log("Uploading to GCS...");
+            // Use config or env check to decide if we should upload
+            if (process.env.GCP_PROJECT_ID && process.env.GCP_STORAGE_BUCKET_NAME) {
+                pdfUrl = await uploadFileToGCS(buffer, file.name);
+                console.log("Uploaded PDF to:", pdfUrl);
+            } else {
+                console.log("Skipping GCS upload (missing config)");
+            }
+        } catch (uploadErr) {
+            console.error("GCS Upload failed, continuing with processing only:", uploadErr);
+            // We continue even if upload fails, or we could return error. 
+            // For now, let's just log it so users still get their quiz.
+        }
+
+        const result = await processBulkPdf(text, file.name, pdfUrl);
 
         if (!result) {
             return NextResponse.json({ error: "Failed to process PDF." }, { status: 500 });

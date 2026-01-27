@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { generateQuizFromText } from "@/lib/agent/quizGenerator";
+// Polyfill for pdf-parse dependencies
+if (typeof DOMMatrix === "undefined") {
+    (global as any).DOMMatrix = class DOMMatrix { };
+}
 const pdf = require("pdf-parse");
 
 export async function POST(req: Request) {
