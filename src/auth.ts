@@ -2,6 +2,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import Apple from "next-auth/providers/apple";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
@@ -32,6 +33,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     response_type: "code",
                 },
             },
+        }),
+        Apple({
+            clientId: process.env.APPLE_ID,
+            clientSecret: process.env.APPLE_CLIENT_SECRET,
         }),
         Credentials({
             async authorize(credentials) {
