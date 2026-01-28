@@ -5,14 +5,19 @@ import { processAndEmbedMaterial } from "@/lib/rag/ingest";
 
 // Helper for CORS headers
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*", // Will be dynamic in logic
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Credentials": "true",
 };
 
-export async function OPTIONS() {
-    return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(req: Request) {
+    const origin = req.headers.get("origin") || "";
+    return NextResponse.json({}, {
+        headers: {
+            ...corsHeaders,
+            "Access-Control-Allow-Origin": origin,
+        },
+    });
 }
 
 export async function GET(req: Request) {

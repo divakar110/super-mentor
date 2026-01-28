@@ -4,15 +4,20 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { processAndEmbedMaterial } from "@/lib/rag/ingest";
 
-// Helper for CORS headers
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*", // Or specific extension ID in production
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
 };
 
-export async function OPTIONS() {
-    return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(req: Request) {
+    const origin = req.headers.get("origin") || "";
+    return NextResponse.json({}, {
+        headers: {
+            ...corsHeaders,
+            "Access-Control-Allow-Origin": origin,
+        },
+    });
 }
 
 export async function POST(req: Request) {
