@@ -11,6 +11,8 @@ const RegisterSchema = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Minimum 6 characters required"),
+    optionalSubject: z.string().optional(),
+    state: z.string().optional(),
 });
 
 export const login = async (values: z.infer<typeof LoginSchema>) => {

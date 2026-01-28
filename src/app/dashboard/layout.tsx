@@ -36,7 +36,7 @@ export default function DashboardLayout({
         <div className="flex min-h-screen bg-background text-foreground">
             {/* Sidebar */}
             <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r bg-card/50 backdrop-blur-xl md:block">
-                <div className="flex h-16 items-center gap-2 border-b px-6 font-bold text-xl">
+                <Link href="/" className="flex h-16 items-center gap-2 border-b px-6 font-bold text-xl hover:bg-muted/50 transition-colors">
                     <motion.div
                         initial={{ rotate: -90, opacity: 0 }}
                         animate={{ rotate: 0, opacity: 1 }}
@@ -45,7 +45,7 @@ export default function DashboardLayout({
                         <Brain className="h-6 w-6 text-primary" />
                     </motion.div>
                     <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">SuperMentor</span>
-                </div>
+                </Link>
                 <div className="flex flex-col gap-2 p-4">
                     {navItems.map((item, i) => {
                         const isActive = pathname === item.href;
@@ -93,10 +93,10 @@ export default function DashboardLayout({
             <main className="flex-1 md:ml-64">
                 {/* Mobile Header */}
                 <header className="sticky top-0 z-10 flex h-16 items-center border-b bg-background/80 backdrop-blur-md px-4 md:hidden justify-between">
-                    <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <Brain className="h-6 w-6 text-primary" />
                         <span className="font-bold">SuperMentor</span>
-                    </div>
+                    </Link>
                     <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         <Menu className="h-6 w-6" />
                     </button>

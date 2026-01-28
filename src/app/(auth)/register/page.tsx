@@ -7,13 +7,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { register } from "@/actions/auth";
 import Link from "next/link";
-import { Mail, Lock, Loader2, User, ArrowRight, CheckCircle } from "lucide-react";
+import { Mail, Lock, Loader2, User, ArrowRight, CheckCircle, MapPin, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
+
+const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"
+];
+
+const OPTIONALS = [
+    "Political Science (PSIR)", "Sociology", "Geography", "History", "Anthropology", "Public Administration", "Economics", "Philosophy", "Psychology"
+];
 
 const RegisterSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
     email: z.string().email({ message: "Invalid email address" }),
     password: z.string().min(6, { message: "Minimum 6 characters required" }),
+    confirmPassword: z.string().min(6, { message: "Confirm Password is required" }),
+    state: z.string().min(1, { message: "State is required" }),
+    optionalSubject: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
 });
 
 export default function RegisterPage() {
@@ -27,6 +41,9 @@ export default function RegisterPage() {
             name: "",
             email: "",
             password: "",
+            confirmPassword: "",
+            state: "",
+            optionalSubject: "",
         },
     });
 
@@ -35,7 +52,9 @@ export default function RegisterPage() {
         setSuccess("");
 
         startTransition(() => {
-            register(values).then((data) => {
+            // Remove confirmPassword before sending
+            const { confirmPassword, ...dataToSend } = values;
+            register(dataToSend).then((data) => {
                 setError(data.error);
                 setSuccess(data.success);
             });
@@ -46,7 +65,7 @@ export default function RegisterPage() {
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="overflow-hidden rounded-2xl border bg-card shadow-xl"
+            className="overflow-hidden rounded-2xl border bg-card shadow-xl w-full max-w-md"
         >
             <div className="p-8">
                 <div className="mb-6 text-center">
@@ -87,6 +106,45 @@ export default function RegisterPage() {
                         )}
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium leading-none">State</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <select
+                                    {...form.register("state")}
+                                    disabled={isPending}
+                                    className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pl-9 appearance-none"
+                                >
+                                    <option value="" disabled>Select State</option>
+                                    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            {form.formState.errors.state && (
+                                <p className="text-xs font-medium text-destructive">{form.formState.errors.state.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium leading-none">Optional (Opt)</label>
+                            <div className="relative">
+                                <BookOpen className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <div className="relative">
+                                    <input
+                                        {...form.register("optionalSubject")}
+                                        list="optionals"
+                                        disabled={isPending}
+                                        placeholder="Select Subject"
+                                        className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+                                    />
+                                    <datalist id="optionals">
+                                        {OPTIONALS.map(o => <option key={o} value={o} />)}
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-sm font-medium leading-none">Password</label>
                         <div className="relative">
@@ -101,6 +159,23 @@ export default function RegisterPage() {
                         </div>
                         {form.formState.errors.password && (
                             <p className="text-xs font-medium text-destructive">{form.formState.errors.password.message}</p>
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium leading-none">Confirm Password</label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <input
+                                {...form.register("confirmPassword")}
+                                disabled={isPending}
+                                type="password"
+                                placeholder="******"
+                                className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+                            />
+                        </div>
+                        {form.formState.errors.confirmPassword && (
+                            <p className="text-xs font-medium text-destructive">{form.formState.errors.confirmPassword.message}</p>
                         )}
                     </div>
 
