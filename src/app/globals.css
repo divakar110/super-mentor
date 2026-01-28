@@ -2,54 +2,60 @@
 
 @layer theme {
   :root {
-    /* Premium Light Mode: Soft Off-White Background */
-    --background: 220 14% 96%;
+    /* UPSC Premier Light: Classy Off-White/Paper */
+    --background: 40 20% 97%;
+    /* Warm paper-like off-white */
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    /* Royal Blue Primary */
-    --primary: 230 65% 55%;
+    /* Royal Navy Blue Primary */
+    --primary: 224 64% 33%;
+    /* #1e3a8a - Deep Royal Blue */
     --primary-foreground: 210 40% 98%;
-    --secondary: 220 14% 93%;
+    --secondary: 210 20% 96%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 220 14% 93%;
+    --muted: 210 20% 96%;
     --muted-foreground: 215 16% 47%;
-    /* Gold/Amber Accent */
-    --accent: 45 93% 47%;
-    --accent-foreground: 222 47% 11%;
+    /* Gold Accent for Premium Feel */
+    --accent: 43 96% 58%;
+    /* #fbbf24 */
+    --accent-foreground: 26 83% 14%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 230 65% 55%;
-    --radius: 0.75rem;
+    --ring: 224 64% 33%;
+    --radius: 0.5rem;
+    /* Slightly tighter radius for classy feel */
   }
 
   .dark {
-    /* Premium Dark Mode: Deep Navy */
+    /* UPSC Premier Dark: Deepest Slate/Charcoal (Not pure black) */
     --background: 222 47% 11%;
+    /* Deep Navy/Slate */
     --foreground: 210 40% 98%;
     --card: 217 33% 17%;
     --card-foreground: 210 40% 98%;
     --popover: 217 33% 17%;
     --popover-foreground: 210 40% 98%;
-    /* Electric Violet Primary */
-    --primary: 263 70% 65%;
+    /* Electric/Royal Blue Primary */
+    --primary: 226 70% 55%;
+    /* Brighter Royal Blue for Dark Mode */
     --primary-foreground: 210 40% 98%;
     --secondary: 217 19% 27%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 19% 27%;
     --muted-foreground: 215 20% 65%;
-    /* Gold/Amber Accent */
-    --accent: 45 93% 55%;
+    /* Bronze/Gold Accent */
+    --accent: 43 96% 58%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 19% 27%;
     --input: 217 19% 27%;
-    --ring: 263 70% 65%;
+    --ring: 226 70% 55%;
   }
 }
 

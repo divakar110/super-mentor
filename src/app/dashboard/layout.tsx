@@ -20,15 +20,16 @@ export default function DashboardLayout({
     // User wants "previous like" behavior.
 
     const navItems = [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        // { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }, // Removed
         { href: "/dashboard/planner", label: "Study Planner", icon: Calendar },
         { href: "/dashboard/syllabus", label: "Syllabus (GS1-4)", icon: BookOpen },
         { href: "/dashboard/chat", label: "AI Mentor", icon: MessageSquare },
         { href: "/dashboard/mcq", label: "MCQ Practice", icon: CheckSquare },
         { href: "/dashboard/study", label: "Study Material", icon: Video },
         { href: "/dashboard/answers", label: "Answer Writing", icon: FileText },
-        { href: "/dashboard/reports", label: "Reports", icon: BarChart },
+        // { href: "/dashboard/reports", label: "Reports", icon: BarChart }, // Merged
         { href: "/dashboard/profile", label: "Profile", icon: User },
+        { href: "/dashboard/personal", label: "Personal Dashboard", icon: LayoutDashboard }, // New
         { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ];
 
