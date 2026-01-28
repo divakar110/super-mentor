@@ -3,11 +3,21 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { processAndEmbedMaterial } from "@/lib/rag/ingest";
 
+// Helper for CORS headers
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*", // Will be dynamic in logic
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET(req: Request) {
     try {
         const session = await auth();
-        // Allow unauthenticated fetch for public demo? No, let's restrict.
-        // Wait, current page fetches on load. 
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -25,9 +35,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
+        const origin = req.headers.get("origin") || "";
+        const headers = {
+            ...corsHeaders,
+            "Access-Control-Allow-Origin": origin,
+        };
+
         const session = await auth();
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
         }
 
         const body = await req.json();
@@ -38,7 +54,7 @@ export async function POST(req: Request) {
                 title,
                 subject,
                 type,
-                content, // This is the notes text
+                content: content || "",
                 url: url || "",
                 userId: session.user.id
             }
@@ -49,10 +65,10 @@ export async function POST(req: Request) {
             await processAndEmbedMaterial(material.id, content);
         }
 
-        return NextResponse.json(material);
+        return NextResponse.json(material, { headers });
 
     } catch (error) {
         console.error("Create Material Error:", error);
-        return NextResponse.json({ error: "Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Server Error" }, { status: 500, headers: corsHeaders });
     }
 }
