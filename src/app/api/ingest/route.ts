@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { processUrl } from "@/lib/agent/ingestTools";
-import fs from "fs";
-import path from "path";
+import { auth } from "@/auth";
+import db from "@/lib/db";
+import { processAndEmbedMaterial } from "@/lib/rag/ingest";
 
 export async function POST(req: Request) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const { url } = await req.json();
 
         if (!url) {
@@ -18,27 +24,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Failed to process URL" }, { status: 500 });
         }
 
-        // Save to materials.json
-        const filePath = path.join(process.cwd(), "src/data/materials.json");
-        let materials = [];
+        // Save to DB
+        const material = await db.material.create({
+            data: {
+                title: data.title || "Untitled",
+                subject: "General", // Default subject
+                type: "web",
+                url: url,
+                content: data.content,
+                userId: session.user.id
+            }
+        });
 
-        if (fs.existsSync(filePath)) {
-            const fileContent = fs.readFileSync(filePath, "utf8");
-            materials = JSON.parse(fileContent);
+        // Trigger RAG Embedding (Background)
+        // We await it here for simplicity, but could be background job.
+        if (material.content) {
+            await processAndEmbedMaterial(material.id, material.content);
         }
 
-        const newMaterial = {
-            id: Date.now().toString(),
-            type: "web",
-            date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-            url: url,
-            ...data
-        };
-
-        materials.push(newMaterial);
-        fs.writeFileSync(filePath, JSON.stringify(materials, null, 4));
-
-        return NextResponse.json({ success: true, material: newMaterial });
+        return NextResponse.json({ success: true, material });
 
     } catch (error) {
         console.error("API Error:", error);

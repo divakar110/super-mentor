@@ -35,9 +35,6 @@ export async function uploadFileToGCS(file: File | Buffer, filename: string, con
 
         console.log(`File uploaded to GCS: ${gcsFileName}`);
 
-        // Make the file public (optional, depending on requirements)
-        // await fileUpload.makePublic();
-
         // Return the public URL or authenticated URL
         // Public URL format: https://storage.googleapis.com/BUCKET_NAME/FILE_NAME
         return `https://storage.googleapis.com/${bucketName}/${gcsFileName}`;

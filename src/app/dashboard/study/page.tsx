@@ -5,6 +5,8 @@ import { FileText, Video, Download, Plus, Filter, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
 import { getApiUrl } from "@/lib/config";
+import StudyChat from "@/components/StudyChat";
+import { MessageSquare, ExternalLink } from "lucide-react";
 
 type Material = {
     id: string;
@@ -50,6 +52,9 @@ export default function StudyPage() {
     const [newType, setNewType] = useState<"pdf" | "video">("pdf");
     const [newContent, setNewContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Chat State
+    const [activeMaterial, setActiveMaterial] = useState<Material | null>(null);
 
     const subjects = ["All", "Polity", "History", "Economy", "Geography"];
 
@@ -119,6 +124,41 @@ export default function StudyPage() {
         }
     };
 
+    const handleExportToNotebookLM = async (material: Material) => {
+        const confirm = window.confirm("Export this to your Google Drive to use with NotebookLM?");
+        if (!confirm) return;
+
+        try {
+            const response = await fetch("/api/drive/export", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: material.title,
+                    content: material.content,
+                    type: material.type
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.webLink) {
+                    window.open("https://notebooklm.google.com/", "_blank");
+                    alert("Exported! Opening NotebookLM. \n\n1. Click 'New Notebook'\n2. Click 'Drive'\n3. Select 'Anti Gravity Notebooks' folder.");
+                }
+            } else {
+                const error = await response.json();
+                if (error.error && error.error.includes("Unauthorized")) {
+                    alert("Please sign in with Google to use this feature.");
+                } else {
+                    alert("Export failed: " + error.error);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Export failed.");
+        }
+    };
+
     return (
         <div className="space-y-8">
             <FadeIn className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -179,13 +219,26 @@ export default function StudyPage() {
 
                             <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
                                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{item.type}</span>
-                                <motion.button
-                                    whileHover={{ scale: 1.1, rotate: 10 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="rounded-full p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                                >
-                                    <Download className="h-4 w-4" />
-                                </motion.button>
+                                <div className="flex gap-2">
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setActiveMaterial(item)}
+                                        className="rounded-full p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                        title="Chat with this material"
+                                    >
+                                        <MessageSquare className="h-4 w-4" />
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.1, rotate: 10 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => handleExportToNotebookLM(item)}
+                                        className="rounded-full p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                        title="Export & Open NotebookLM"
+                                    >
+                                        <ExternalLink className="h-4 w-4" />
+                                    </motion.button>
+                                </div>
                             </div>
                         </StaggerItem>
                     ))}
@@ -351,6 +404,17 @@ export default function StudyPage() {
 
                         </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
+
+            {/* Chat Modal */}
+            <AnimatePresence>
+                {activeMaterial && (
+                    <StudyChat
+                        materialId={activeMaterial.id}
+                        materialTitle={activeMaterial.title}
+                        onClose={() => setActiveMaterial(null)}
+                    />
                 )}
             </AnimatePresence>
         </div>

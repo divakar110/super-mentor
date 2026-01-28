@@ -1,78 +1,41 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { google } from '@ai-sdk/google';
+import { streamText } from 'ai';
+import { getRelevantContext } from '@/lib/rag/retrieve';
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
-    try {
-        const { messages } = await req.json();
-        const apiKey = process.env.GEMINI_API_KEY;
+  const { messages, materialId } = await req.json();
 
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: "GEMINI_API_KEY is not set" },
-                { status: 500 }
-            );
-        }
+  // Get the last user message to use as the search query
+  const lastMessage = messages[messages.length - 1].content;
 
-        // --- RAG implementation ---
-        // 1. Read materials
-        const dataFilePath = path.join(process.cwd(), "src/data/materials.json");
-        let knowledgeBase = "";
+  // Retrieve ONLY the relevant chunks (RAG)
+  const context = await getRelevantContext(lastMessage, materialId);
 
-        try {
-            if (fs.existsSync(dataFilePath)) {
-                const fileContent = fs.readFileSync(dataFilePath, "utf8");
-                const materials = JSON.parse(fileContent);
+  // Add context to the system message or the first user message
+  const systemPrompt = `
+    You are an intelligent study assistant named "Anti Gravity Mentor".
+    You are helping a student learn from their study materials.
+    
+    CONTEXT MATERIAL:
+    """
+    ${context || "No specific context provided. Answer from general knowledge."}
+    """
+    
+    INSTRUCTIONS:
+    1. Answer the user's question based primarily on the CONTEXT MATERIAL above.
+    2. If the answer is not in the context, you can use your general knowledge but mention that it's from outside the notes.
+    3. Be encouraging, concise, and educational.
+    4. Format your response with Markdown (bold key terms, use bullet points).
+  `;
 
-                // 2. Extract content
-                knowledgeBase = materials
-                    .filter((m: any) => m.content)
-                    .map((m: any) => `[Title: ${m.title}]\n${m.content}`)
-                    .join("\n\n");
-            }
-        } catch (err) {
-            console.error("Failed to read knowledge base", err);
-        }
+  const result = streamText({
+    model: google('gemini-1.5-flash'),
+    system: systemPrompt,
+    messages,
+  });
 
-        const systemInstruction = knowledgeBase
-            ? `You are an AI Mentor. Access to Study Notes:\n${knowledgeBase}\n\nUse these notes to answer the student's questions if relevant.`
-            : "You are an AI Mentor.";
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-flash-latest",
-            systemInstruction: systemInstruction
-        });
-
-        // Format history for Gemini
-        // Gemini expects parts array with text
-        // IMPORTANT: History must start with 'user', so we filter out initial assistant messages if they exist
-        let history = messages.slice(0, -1).map((m: any) => ({
-            role: m.role === "assistant" ? "model" : "user",
-            parts: [{ text: m.content }],
-        }));
-
-        while (history.length > 0 && history[0].role === "model") {
-            history.shift();
-        }
-
-        const lastMessage = messages[messages.length - 1].content;
-
-        const chat = model.startChat({
-            history: history,
-        });
-
-        const result = await chat.sendMessage(lastMessage);
-        const response = await result.response;
-        const text = response.text();
-
-        return NextResponse.json({ content: text });
-    } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        return NextResponse.json(
-            { error: "Failed to generate response" },
-            { status: 500 }
-        );
-    }
+  return result.toDataStreamResponse();
 }

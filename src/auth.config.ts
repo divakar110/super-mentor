@@ -33,7 +33,10 @@ export const authConfig = {
             }
             return true;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, account }) {
+            if (account) {
+                token.accessToken = account.access_token;
+            }
             if (user) {
                 token.role = (user as any).role;
                 token.id = user.id;
@@ -44,6 +47,7 @@ export const authConfig = {
             if (token && session.user) {
                 (session.user as any).role = token.role;
                 (session.user as any).id = token.id;
+                (session as any).accessToken = token.accessToken;
             }
             return session;
         },

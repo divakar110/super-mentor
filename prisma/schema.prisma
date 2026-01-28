@@ -1,11 +1,12 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  previewFeatures = ["driverAdapters", "postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  extensions = [vector]
 }
 
 model User {
@@ -28,9 +29,19 @@ model Material {
   type      String   // "pdf" or "video"
   url       String
   content   String?  // For RAG/Notes
+  embeddings Embedding[]
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model Embedding {
+  id         String   @id @default(cuid())
+  content    String   // The text chunk
+  vector     Unsupported("vector(768)") // Gemini 1.5/Embedding-004 uses 768 dimensions
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 }
 
 model Score {
