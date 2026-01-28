@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Anti Gravity Notebook Clipper",
+    "version": "1.0",
+    "description": "Clip web pages to your Anti Gravity Notebook.",
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "cookies"
+    ],
+    "host_permissions": [
+        "http://localhost:3000/*",
+        "https://anti-gravity.vercel.app/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": "icon.png"
+    },
+    "icons": {
+        "16": "icon.png",
+        "48": "icon.png",
+        "128": "icon.png"
+    }
+}
