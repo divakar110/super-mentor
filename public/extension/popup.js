@@ -18,6 +18,7 @@ document.getElementById('clipBtn').addEventListener('click', async () => {
 
         const response = await fetch(API_URL, {
             method: 'POST',
+            credentials: 'include', //  Important: Send cookies for Auth
             headers: {
                 'Content-Type': 'application/json',
             },

@@ -4,24 +4,57 @@ import { auth } from "@/auth";
 import db from "@/lib/db";
 import { processAndEmbedMaterial } from "@/lib/rag/ingest";
 
+// Helper for CORS headers
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*", // Or specific extension ID in production
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(req: Request) {
     try {
+        // Handle session manually or via headers if needed for extension?
+        // Extension likely won't send Next-Auth cookies correctly across origins easily without complex setup.
+        // For now, let's relax Auth for the specific "Chrome Extension" agent or require an API Key?
+        // Simplest Fix: The user asked for "Admins Only". The extension sends cookies if 'credentials: include' is used.
+        // But 'Access-Control-Allow-Origin: *' prevents credentials. 
+        // We need to reflect the origin.
+
+        const origin = req.headers.get("origin") || "";
+        // Basic check to see if it's from an extension (starts with chrome-extension://)
+        const isExtension = origin.startsWith("chrome-extension://");
+
+        const headers = {
+            "Access-Control-Allow-Origin": origin, // Reflect origin
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        };
+
         const session = await auth();
+        // If coming from extension, we might rely on the session cookie if the browser sends it.
+
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            // Fallback: If no session (cookie blocked), allow if we implement API Key later.
+            // For now, return unauthorized but with CORS headers allowing the frontend to see the 401.
+            return NextResponse.json({ error: "Unauthorized. Log in to the web app first." }, { status: 401, headers });
         }
 
         const { url } = await req.json();
 
         if (!url) {
-            return NextResponse.json({ error: "URL is required" }, { status: 400 });
+            return NextResponse.json({ error: "URL is required" }, { status: 400, headers });
         }
 
         // Run the Agent
         const data = await processUrl(url);
 
         if (!data) {
-            return NextResponse.json({ error: "Failed to process URL" }, { status: 500 });
+            return NextResponse.json({ error: "Failed to process URL" }, { status: 500, headers });
         }
 
         // Save to DB
@@ -36,16 +69,15 @@ export async function POST(req: Request) {
             }
         });
 
-        // Trigger RAG Embedding (Background)
-        // We await it here for simplicity, but could be background job.
+        // Trigger RAG Embedding
         if (material.content) {
             await processAndEmbedMaterial(material.id, material.content);
         }
 
-        return NextResponse.json({ success: true, material });
+        return NextResponse.json({ success: true, material }, { headers });
 
     } catch (error) {
         console.error("API Error:", error);
-        return NextResponse.json({ error: "Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Server Error" }, { status: 500, headers: corsHeaders });
     }
 }
