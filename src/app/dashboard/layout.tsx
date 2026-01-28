@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Brain, LayoutDashboard, LogOut, MessageSquare, Settings, User, Menu, CheckSquare, BarChart, Video, Calendar } from "lucide-react";
+import { BookOpen, Brain, LayoutDashboard, LogOut, MessageSquare, Settings, User, Menu, CheckSquare, BarChart, Video, Calendar, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -26,6 +26,7 @@ export default function DashboardLayout({
         { href: "/dashboard/chat", label: "AI Mentor", icon: MessageSquare },
         { href: "/dashboard/mcq", label: "MCQ Practice", icon: CheckSquare },
         { href: "/dashboard/study", label: "Study Material", icon: Video },
+        { href: "/dashboard/answers", label: "Answer Writing", icon: FileText },
         { href: "/dashboard/reports", label: "Reports", icon: BarChart },
         { href: "/dashboard/profile", label: "Profile", icon: User },
         { href: "/dashboard/settings", label: "Settings", icon: Settings },

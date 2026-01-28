@@ -1,10 +1,11 @@
-
 "use client";
 
 import { useState } from "react";
-import { BookOpen, ChevronRight, Layers, Globe, Scale, Lightbulb } from "lucide-react";
+import { BookOpen, ChevronRight, Layers, Globe, Scale, Lightbulb, MessageSquare, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
+import CommentsSection from "@/components/Comments";
+import { getOrCreateTopicId } from "@/actions/comments";
 
 const syllabusData = {
     GS1: {
@@ -77,11 +78,36 @@ const syllabusData = {
     }
 };
 
+function slugify(text: string) {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with -
+        .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+        .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+        .replace(/^-+/, '')             // Trim - from start of text
+        .replace(/-+$/, '')             // Trim - from end of text
+        .substring(0, 50);              // Truncate to avoid huge slugs
+}
+
 export default function SyllabusPage() {
     const [activeTab, setActiveTab] = useState<keyof typeof syllabusData>("GS1");
 
+    // Discussion State
+    const [activeTopic, setActiveTopic] = useState<{ name: string, id: string } | null>(null);
+
+    const openDiscussion = async (topicName: string) => {
+        const slug = slugify(topicName);
+        // We need an ID for the DB. Let's create one on the fly if it doesn't exist
+        // using the new helper action
+        const id = await getOrCreateTopicId(slug, topicName);
+        if (id) {
+            setActiveTopic({ name: topicName, id });
+        } else {
+            alert("Failed to access discussion for this topic.");
+        }
+    };
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
             <FadeIn>
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">UPSC Syllabus</h1>
@@ -96,8 +122,8 @@ export default function SyllabusPage() {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`relative flex-1 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-300 ${activeTab === tab
-                                ? "text-primary-foreground"
-                                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
                             }`}
                     >
                         {activeTab === tab && (
@@ -145,19 +171,67 @@ export default function SyllabusPage() {
                             {syllabusData[activeTab].topics.map((topic, index) => (
                                 <StaggerItem
                                     key={index}
-                                    className="group flex items-start gap-3 p-4 rounded-xl border bg-background/50 hover:bg-secondary/20 hover:border-primary/20 transition-all cursor-default"
+                                    className="group flex flex-col sm:flex-row sm:items-start gap-3 p-4 rounded-xl border bg-background/50 hover:bg-secondary/20 hover:border-primary/20 transition-all"
                                 >
                                     <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                                         {index + 1}
                                     </div>
-                                    <p className="text-sm md:text-base leading-relaxed text-foreground/80 group-hover:text-foreground transition-colors">
-                                        {topic}
-                                    </p>
+                                    <div className="flex-1">
+                                        <p className="text-sm md:text-base leading-relaxed text-foreground/80 group-hover:text-foreground transition-colors">
+                                            {topic}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => openDiscussion(topic)}
+                                        className="self-end sm:self-center shrink-0 p-2 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
+                                        title="Discuss this topic"
+                                    >
+                                        <MessageSquare className="w-4 h-4" />
+                                        <span className="text-xs font-medium hidden sm:inline">Discuss</span>
+                                    </button>
                                 </StaggerItem>
                             ))}
                         </StaggerContainer>
                     </div>
                 </motion.div>
+            </AnimatePresence>
+
+            {/* Discussion Sheet (Modal) */}
+            <AnimatePresence>
+                {activeTopic && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+                        onClick={() => setActiveTopic(null)}
+                    >
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="w-full max-w-md bg-background h-full shadow-2xl p-6 overflow-y-auto border-l"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold line-clamp-2">{activeTopic.name}</h2>
+                                <button
+                                    onClick={() => setActiveTopic(null)}
+                                    className="p-2 rounded-full hover:bg-secondary transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <CommentsSection
+                                entityId={activeTopic.id}
+                                entityType="topic"
+                                title="Topic Forum"
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </div>
     );

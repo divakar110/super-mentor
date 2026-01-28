@@ -38,7 +38,13 @@ export const authConfig = {
                 token.accessToken = account.access_token;
             }
             if (user) {
-                token.role = (user as any).role;
+                const adminEmails = ["divakar.iitg110@gmail.com", "divakarreddydoddam@gmail.com"];
+                // Force admin if email matches
+                if (user.email && adminEmails.includes(user.email)) {
+                    token.role = "ADMIN";
+                } else {
+                    token.role = (user as any).role;
+                }
                 token.id = user.id;
             }
             return token;

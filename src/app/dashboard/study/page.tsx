@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion";
 import { getApiUrl } from "@/lib/config";
 import StudyChat from "@/components/StudyChat";
-import { MessageSquare, ExternalLink } from "lucide-react";
+import { MessageSquare, ExternalLink, MessageCircle } from "lucide-react";
+import CommentsSection from "@/components/Comments";
+import { useSession } from "next-auth/react";
 
 type Material = {
     id: string;
@@ -19,6 +21,7 @@ type Material = {
 };
 
 export default function StudyPage() {
+    const { data: session } = useSession();
     const [materials, setMaterials] = useState<Material[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -55,6 +58,8 @@ export default function StudyPage() {
 
     // Chat State
     const [activeMaterial, setActiveMaterial] = useState<Material | null>(null);
+    // Discussion State
+    const [activeDiscussionMaterial, setActiveDiscussionMaterial] = useState<Material | null>(null);
 
     const subjects = ["All", "Polity", "History", "Economy", "Geography"];
 
@@ -160,21 +165,23 @@ export default function StudyPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
             <FadeIn className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground">Study Material</h1>
                     <p className="text-muted-foreground mt-1">Access your comprehensive library of resources.</p>
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsUploadOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
-                >
-                    <Plus className="h-4 w-4" />
-                    Add Content
-                </motion.button>
+                {session?.user?.role === "ADMIN" && (
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsUploadOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Content
+                    </motion.button>
+                )}
             </FadeIn>
 
             {/* Filters */}
@@ -220,6 +227,15 @@ export default function StudyPage() {
                             <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
                                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{item.type}</span>
                                 <div className="flex gap-2">
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setActiveDiscussionMaterial(item)}
+                                        className="rounded-full p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                        title="Discussion"
+                                    >
+                                        <MessageCircle className="h-4 w-4" />
+                                    </motion.button>
                                     <motion.button
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
@@ -415,6 +431,44 @@ export default function StudyPage() {
                         materialTitle={activeMaterial.title}
                         onClose={() => setActiveMaterial(null)}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Comments Modal */}
+            <AnimatePresence>
+                {activeDiscussionMaterial && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+                        onClick={() => setActiveDiscussionMaterial(null)}
+                    >
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="w-full max-w-md bg-background h-full shadow-2xl p-6 overflow-y-auto border-l"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold line-clamp-2">{activeDiscussionMaterial.title}</h2>
+                                <button
+                                    onClick={() => setActiveDiscussionMaterial(null)}
+                                    className="p-2 rounded-full hover:bg-secondary transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <CommentsSection
+                                entityId={activeDiscussionMaterial.id}
+                                entityType="material"
+                                title="Material Discussion"
+                            />
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

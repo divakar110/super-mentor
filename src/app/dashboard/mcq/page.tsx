@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckSquare, ArrowRight, RefreshCcw, CheckCircle, XCircle, Trophy, BookOpen, BrainCircuit, UploadCloud, Loader2, Library, Sparkles } from "lucide-react";
+import { CheckSquare, ArrowRight, RefreshCcw, CheckCircle, XCircle, Trophy, BookOpen, BrainCircuit, UploadCloud, Loader2, Library, Sparkles, MessageSquare, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn } from "@/components/ui/motion";
 import { getApiUrl } from "@/lib/config";
+import CommentsSection from "@/components/Comments";
 
 // --- TYPES ---
 type UnifiedQuestion = {
@@ -43,6 +44,9 @@ export default function MCQPage() {
     // Quiz Session State
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<Record<string | number, number>>({});
+
+    // Discussion State
+    const [activeDiscussionQuestion, setActiveDiscussionQuestion] = useState<UnifiedQuestion | null>(null);
 
     // Load Library Topics on Mount
     useEffect(() => {
@@ -116,7 +120,7 @@ export default function MCQPage() {
                 data.topics.forEach((t: any) => {
                     t.questions.forEach((q: any) => {
                         allQuestions.push({
-                            id: Math.random(), // Temp ID
+                            id: Math.random(), // Temp ID - Comments won't work perfectly here unless saved
                             text: q.question,
                             options: q.options,
                             correctIndex: q.correct,
@@ -192,6 +196,15 @@ export default function MCQPage() {
         setView('browse');
         setQuestions([]);
         setCurrentQuizTitle("");
+    };
+
+    const openDiscussion = (q: UnifiedQuestion) => {
+        // If ID is numeric/random, it means it's an AI generated question not saved to DB likely
+        if (typeof q.id === 'number') {
+            alert("Discussion is only available for library questions.");
+            return;
+        }
+        setActiveDiscussionQuestion(q);
     };
 
     // --- RENDERERS ---
@@ -352,8 +365,8 @@ export default function MCQPage() {
                                     key={idx}
                                     onClick={() => handleOptionSelect(q.id, idx)}
                                     className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group ${userAnswers[q.id] === idx
-                                            ? "bg-primary/10 border-primary text-primary shadow-sm"
-                                            : "bg-background border-border hover:border-primary/50 hover:bg-secondary/30"
+                                        ? "bg-primary/10 border-primary text-primary shadow-sm"
+                                        : "bg-background border-border hover:border-primary/50 hover:bg-secondary/30"
                                         }`}
                                 >
                                     <span className="font-medium text-lg">{option}</span>
@@ -409,15 +422,21 @@ export default function MCQPage() {
                                 <div className="grid gap-2 mb-4">
                                     {q.options.map((opt, i) => (
                                         <div key={i} className={`p-3 rounded-lg text-sm border ${i === q.correctIndex ? "bg-green-100 dark:bg-green-900/30 border-green-500" :
-                                                i === userAns ? "bg-red-100 dark:bg-red-900/30 border-red-500" :
-                                                    "opacity-70 bg-background"
+                                            i === userAns ? "bg-red-100 dark:bg-red-900/30 border-red-500" :
+                                                "opacity-70 bg-background"
                                             }`}>
                                             {opt}
                                         </div>
                                     ))}
                                 </div>
-                                <div className="text-sm text-muted-foreground bg-background/50 p-4 rounded-xl border">
-                                    <span className="font-bold">Explanation: </span> {q.explanation}
+                                <div className="text-sm text-muted-foreground bg-background/50 p-4 rounded-xl border flex items-center justify-between">
+                                    <span><span className="font-bold">Explanation: </span> {q.explanation}</span>
+                                    <button
+                                        onClick={() => openDiscussion(q)}
+                                        className="text-xs text-primary hover:underline flex items-center gap-1 shrink-0 ml-4"
+                                    >
+                                        <MessageSquare className="w-4 h-4" /> Discuss
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -437,5 +456,50 @@ export default function MCQPage() {
     if (view === 'quiz') return renderQuiz();
     if (view === 'review') return renderReview();
 
-    return renderBrowser();
+    return (
+        <div className="relative">
+            {renderBrowser()}
+
+            {/* Discussion Sheet (Modal) */}
+            <AnimatePresence>
+                {activeDiscussionQuestion && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+                        onClick={() => setActiveDiscussionQuestion(null)}
+                    >
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="w-full max-w-md bg-background h-full shadow-2xl p-6 overflow-y-auto border-l"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold line-clamp-1">Question Discussion</h2>
+                                <button
+                                    onClick={() => setActiveDiscussionQuestion(null)}
+                                    className="p-2 rounded-full hover:bg-secondary transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="mb-6 p-4 bg-secondary/20 rounded-lg border">
+                                <p className="text-sm font-medium">{activeDiscussionQuestion.text}</p>
+                            </div>
+
+                            <CommentsSection
+                                entityId={activeDiscussionQuestion.id.toString()}
+                                entityType="question"
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 }
